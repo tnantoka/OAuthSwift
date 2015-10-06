@@ -97,8 +97,25 @@ public class OAuthSwiftClient {
         self.multiPartRequest(urlString, method: .POST, parameters: parameters, image: image, success: success, failure: failure)
     }
 
-    func multiPartRequest(url: String, method: OAuthSwiftHTTPRequest.Method, parameters: Dictionary<String, AnyObject>, image: NSData, success: OAuthSwiftHTTPRequest.SuccessHandler?, failure: OAuthSwiftHTTPRequest.FailureHandler?) {
+    public func multiPartRequest(url: String, method: OAuthSwiftHTTPRequest.Method, parameters: Dictionary<String, AnyObject>, success: OAuthSwiftHTTPRequest.SuccessHandler?, failure: OAuthSwiftHTTPRequest.FailureHandler?) {
 
+        if let request = makeRequest(url, method: method, parameters: parameters) {
+
+            let boundary = "AS-boundary-\(arc4random())-\(arc4random())"
+            let type = "multipart/form-data; boundary=\(boundary)"
+            let body = self.multiPartBodyFromParams(parameters, boundary: boundary)
+
+            request.HTTPBody = body
+            request.headers += ["Content-Type": type] // "Content-Length": body.length.description
+
+            request.successHandler = success
+            request.failureHandler = failure
+            request.start()
+        }
+    }
+
+    func multiPartRequest(url: String, method: OAuthSwiftHTTPRequest.Method, parameters: Dictionary<String, AnyObject>, image: NSData, success: OAuthSwiftHTTPRequest.SuccessHandler?, failure: OAuthSwiftHTTPRequest.FailureHandler?) {
+        
         if let request = makeRequest(url, method: method, parameters: parameters) {
             
             var parmaImage = [String: AnyObject]()
@@ -132,13 +149,18 @@ public class OAuthSwiftClient {
                 sectionData = multiData
                 sectionType = "image/jpeg"
                 sectionFilename = " filename=\"file\""
+            } else if key.hasSuffix("[avatar]") {
+                let multiData = value as! NSData
+                sectionData = multiData
+                sectionType = "image/png"
+                sectionFilename = " filename=\"avatar.png\""
             } else {
                 sectionData = "\(value)".dataUsingEncoding(NSUTF8StringEncoding)
             }
             
             data.appendData(prefixData!)
             
-            let sectionDisposition = "Content-Disposition: form-data; name=\"media\";\(sectionFilename)\r\n".dataUsingEncoding(NSUTF8StringEncoding)
+            let sectionDisposition = "Content-Disposition: form-data; name=\"\(key)\";\(sectionFilename)\r\n".dataUsingEncoding(NSUTF8StringEncoding)
             data.appendData(sectionDisposition!)
             
             if let type = sectionType {
