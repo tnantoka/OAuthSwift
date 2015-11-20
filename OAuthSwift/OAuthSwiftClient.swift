@@ -97,25 +97,8 @@ public class OAuthSwiftClient {
         self.multiPartRequest(urlString, method: .POST, parameters: parameters, image: image, success: success, failure: failure)
     }
 
-    public func multiPartRequest(url: String, method: OAuthSwiftHTTPRequest.Method, parameters: Dictionary<String, AnyObject>, success: OAuthSwiftHTTPRequest.SuccessHandler?, failure: OAuthSwiftHTTPRequest.FailureHandler?) {
-
-        if let request = makeRequest(url, method: method, parameters: parameters) {
-
-            let boundary = "AS-boundary-\(arc4random())-\(arc4random())"
-            let type = "multipart/form-data; boundary=\(boundary)"
-            let body = self.multiPartBodyFromParams(parameters, boundary: boundary)
-
-            request.HTTPBody = body
-            request.headers += ["Content-Type": type] // "Content-Length": body.length.description
-
-            request.successHandler = success
-            request.failureHandler = failure
-            request.start()
-        }
-    }
-
     func multiPartRequest(url: String, method: OAuthSwiftHTTPRequest.Method, parameters: Dictionary<String, AnyObject>, image: NSData, success: OAuthSwiftHTTPRequest.SuccessHandler?, failure: OAuthSwiftHTTPRequest.FailureHandler?) {
-        
+
         if let request = makeRequest(url, method: method, parameters: parameters) {
             
             var parmaImage = [String: AnyObject]()
@@ -133,6 +116,23 @@ public class OAuthSwiftClient {
         }
     }
 
+    public func multiPartRequest(url: String, method: OAuthSwiftHTTPRequest.Method, parameters: Dictionary<String, AnyObject>, success: OAuthSwiftHTTPRequest.SuccessHandler?, failure: OAuthSwiftHTTPRequest.FailureHandler?) {
+        
+        if let request = makeRequest(url, method: method, parameters: parameters) {
+            
+            let boundary = "AS-boundary-\(arc4random())-\(arc4random())"
+            let type = "multipart/form-data; boundary=\(boundary)"
+            let body = self.multiPartBodyFromParams(parameters, boundary: boundary)
+            
+            request.HTTPBody = body
+            request.headers += ["Content-Type": type] // "Content-Length": body.length.description
+            
+            request.successHandler = success
+            request.failureHandler = failure
+            request.start()
+        }
+    }
+    
     public func multiPartBodyFromParams(parameters: [String: AnyObject], boundary: String) -> NSData {
         let data = NSMutableData()
         
